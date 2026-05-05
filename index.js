@@ -4,43 +4,48 @@ const cors = require("cors");
 
 const app = express();
 
-
-// 本番はここを自分のフロントURLに
 app.use(cors({
-  origin: "https://gentle-tree-01f568900.7.azurestaticapps.net"
+  origin: [
+    "https://gentle-tree-01f568900.7.azurestaticapps.net",
+    "http://localhost:3000",
+  ]
 }));
 
 app.use(express.json());
 
-// 確認用  
 app.get("/", (req, res) => {
   res.send("Backend OK 🚀");
 });
 
-// セッション取得
+// エフェメラルキー取得
 app.post("/realtime/session", async (req, res) => {
   try {
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+    const apiKey = process.env.AZURE_OPENAI_API_KEY;
+    const deployment = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
+
     const response = await fetch(
-      "https://api.openai.com/v1/realtime/sessions",
+      `${endpoint}/openai/v1/realtime/client_secrets`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "api-key": apiKey,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-realtime",
-          voice: "alloy",
+          model: deployment,
+          voice: "onyx",
           instructions: `
-        あなたは落ち着いた男性のAIです。
-        日本語で自然に会話してください。
-        短く、わかりやすく答えてください。
-        `
+            あなたは落ち着いた男性のAIです。
+            日本語で自然に会話してください。
+            短く、わかりやすく答えてください。
+          `
         }),
       }
     );
 
     const data = await response.json();
+    console.log("Session response:", JSON.stringify(data).substring(0, 200));
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -52,4 +57,3 @@ const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log("Backend running on port " + port);
 });
-
