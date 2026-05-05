@@ -4,6 +4,7 @@ const cors = require("cors");
 
 const app = express();
 
+
 // 本番はここを自分のフロントURLに
 app.use(cors({
   origin: "https://icy-forest-0f8312e00.7.azurestaticapps.net"
