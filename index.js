@@ -11,7 +11,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// 確認用
+// 確認用  
 app.get("/", (req, res) => {
   res.send("Backend OK 🚀");
 });
