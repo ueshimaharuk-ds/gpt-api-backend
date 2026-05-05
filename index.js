@@ -4,52 +4,49 @@ const cors = require("cors");
 
 const app = express();
 
+// フロントエンドのURL（Azure Static Web Appsなど）
 app.use(cors({
-  origin: [
-    "https://gentle-tree-01f568900.7.azurestaticapps.net",
-    "http://localhost:3000",
-  ]
+  origin: "https://gentle-tree-01f568900.7.azurestaticapps.net"
 }));
 
 app.use(express.json());
 
+// 確認用
 app.get("/", (req, res) => {
-  res.send("Backend OK 🚀");
+  res.send("Azure Backend OK 🚀");
 });
 
-// エフェメラルキー取得
+// セッション取得（エフェメラルキーの発行）
 app.post("/realtime/session", async (req, res) => {
   try {
-    const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-    const apiKey = process.env.AZURE_OPENAI_API_KEY;
-    const deployment = process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
+    // Azure OpenAIのエンドポイントURLを構築
+    // .envには https://gpt-api-realtime.openai.azure.com/ を設定してください
+    const url = `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/gpt-realtime-1.5/realtime/sessions?api-version=2024-10-01-preview`;
 
-    const response = await fetch(
-      `${endpoint}/openai/v1/realtime/client_secrets`,
-      {
-        method: "POST",
-        headers: {
-          "api-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: deployment,
-          voice: "onyx",
-          instructions: `
-            あなたは落ち着いた男性のAIです。
-            日本語で自然に会話してください。
-            短く、わかりやすく答えてください。
-          `
-        }),
-      }
-    );
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "api-key": process.env.AZURE_OPENAI_KEY, // Azure Portalで確認したキー
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-realtime-1.5",
+        voice: "alloy",
+        instructions: `
+        あなたは落ち着いた男性のAIです。
+        日本語で自然に会話してください。
+        短く、わかりやすく答えてください。
+        `
+      }),
+    });
 
     const data = await response.json();
-    console.log("Session response:", JSON.stringify(data).substring(0, 200));
+    
+    // Azureから返ってきたセッション情報（client_secret等）をそのままフロントへ
     res.json(data);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "session作成失敗" });
+    res.status(500).json({ error: "Azure session作成失敗" });
   }
 });
 
