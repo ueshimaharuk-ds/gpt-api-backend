@@ -7,7 +7,7 @@ const app = express();
 
 // 本番はここを自分のフロントURLに
 app.use(cors({
-  origin: "https://icy-forest-0f8312e00.7.azurestaticapps.net"
+  origin: "https://gentle-tree-01f568900.7.azurestaticapps.net"
 }));
 
 app.use(express.json());
