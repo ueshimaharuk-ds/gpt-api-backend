@@ -4,49 +4,53 @@ const cors = require("cors");
 
 const app = express();
 
-// フロントエンドのURL（Azure Static Web Appsなど）
+// フロントエンドのURLを許可
 app.use(cors({
   origin: "https://gentle-tree-01f568900.7.azurestaticapps.net"
 }));
 
 app.use(express.json());
 
-// 確認用
-app.get("/", (req, res) => {
-  res.send("Azure Backend OK 🚀");
-});
-
-// セッション取得（エフェメラルキーの発行）
 app.post("/realtime/session", async (req, res) => {
   try {
-    // Azure OpenAIのエンドポイントURLを構築
-    // .envには https://gpt-api-realtime.openai.azure.com/ を設定してください
-    const url = `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/gpt-realtime-1.5/realtime/sessions?api-version=2024-10-01-preview`;
+    // Azure OpenAIポータルで確認したエンドポイントとデプロイ名を使用
+    // 例: https://gpt-api-realtime.openai.azure.com/
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT.replace(/\/$/, ""); // 末尾のスラッシュを削除
+    const deployment = "gpt-realtime-1.5"; 
+    const apiVersion = "2024-10-01-preview";
+
+    const url = `${endpoint}/openai/deployments/${deployment}/realtime/sessions?api-version=${apiVersion}`;
+
+    console.log("Connecting to Azure URL:", url);
 
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "api-key": process.env.AZURE_OPENAI_KEY, // Azure Portalで確認したキー
+        "api-key": process.env.AZURE_OPENAI_KEY, // 'Authorization' ではなく 'api-key'
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "gpt-realtime-1.5",
         voice: "alloy",
-        instructions: `
-        あなたは落ち着いた男性のAIです。
-        日本語で自然に会話してください。
-        短く、わかりやすく答えてください。
-        `
+        instructions: "あなたは落ち着いた男性のAIです。日本語で自然に会話してください。"
       }),
     });
 
     const data = await response.json();
-    
-    // Azureから返ってきたセッション情報（client_secret等）をそのままフロントへ
+
+    // デバッグ用にAzureからの生の応答を表示
+    console.log("Azure Response Status:", response.status);
+    console.log("Azure Response Data:", JSON.stringify(data, null, 2));
+
+    if (!response.ok) {
+      throw new Error(`Azure API Error: ${data.error?.message || response.statusText}`);
+    }
+
+    // ここで返る data の中に client_secret (エフェメラルキー) が含まれます
     res.json(data);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Azure session作成失敗" });
+    console.error("Session creation failed:", err.message);
+    res.status(500).json({ error: "Azure session作成失敗", message: err.message });
   }
 });
 
